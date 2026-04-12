@@ -1,0 +1,139 @@
+# AutoMate 配置文件
+# Phase 3: Agent 配置
+
+# LLM API 配置
+llm:
+  # 提供者: openai | ollama | azure
+  provider: openai
+  
+  # OpenAI 配置
+  openai:
+    api_key: "${OPENAI_API_KEY}"        # 环境变量引用
+    base_url: "https://api.openai.com/v1"
+    model: "gpt-4o-mini"                # 主力模型
+    model_vision: "gpt-4o"               # 视觉模型（需要屏幕理解时）
+    max_tokens: 4096
+    temperature: 0.7
+    timeout: 120                         # 秒
+  
+  # Ollama 本地模型配置
+  ollama:
+    base_url: "http://localhost:11434"
+    model: "llama3.2"                    # 默认模型
+    model_vision: "llama3.2-vision"      # 视觉模型
+    timeout: 300                         # 本地模型较慢
+  
+  # Azure OpenAI 配置
+  azure:
+    api_version: "2024-02-01"
+    base_url: "https://YOUR_RESOURCE.openai.azure.com"
+    deployment_name: "gpt-4o-mini"
+
+# Agent 行为配置
+agent:
+  # 任务拆解策略
+  max_steps: 20                          # 最大拆解步骤数
+  max_retries: 3                         # 单步最大重试次数
+  retry_delay: 2                         # 重试间隔（秒）
+  
+  # 截图策略
+  screenshot_on_step: true               # 每步后截图
+  screenshot_on_error: true              # 错误时截图
+  screenshot_quality: 85                 # JPEG 质量
+  
+  # 执行模式
+  confirm_before_execute: false           # 执行前确认
+  verbose: true                          # 详细输出
+  
+  # 上下文窗口
+  include_last_screenshot: true         # 包含最近截图
+  include_mouse_position: true            # 包含鼠标位置
+
+# 可用工具定义（Function Calling）
+tools:
+  - name: click
+    description: "点击屏幕指定坐标"
+    params:
+      x: {type: "integer", required: true, description: "X坐标"}
+      y: {type: "integer", required: true, description: "Y坐标"}
+      button: {type: "string", default: "left", description: "鼠标按钮: left/right/middle"}
+  
+  - name: double_click
+    description: "双击屏幕指定坐标"
+    params:
+      x: {type: "integer", required: true}
+      y: {type: "integer", required: true}
+  
+  - name: right_click
+    description: "右键点击"
+    params:
+      x: {type: "integer", required: true}
+      y: {type: "integer", required: true}
+  
+  - name: move_mouse
+    description: "移动鼠标到指定位置"
+    params:
+      x: {type: "integer", required: true}
+      y: {type: "integer", required: true}
+      duration: {type: "number", default: 0.5}
+  
+  - name: type_text
+    description: "键盘输入文字"
+    params:
+      text: {type: "string", required: true, description: "要输入的文字"}
+      interval: {type: "number", default: 0.05}
+  
+  - name: press_key
+    description: "按键盘按键"
+    params:
+      key: {type: "string", required: true, description: "按键名如: enter, tab, esc, a, 1等"}
+  
+  - name: hotkey
+    description: "组合键如 Ctrl+C"
+    params:
+      keys: {type: "array", items: "string", required: true, description: "按键列表"}
+  
+  - name: screenshot
+    description: "截取当前屏幕"
+    params:
+      region: {type: "object", description: "截取区域 {x, y, width, height}"}
+  
+  - name: find_image
+    description: "在屏幕上查找图片"
+    params:
+      image_path: {type: "string", required: true, description: "图片路径"}
+      confidence: {type: "number", default: 0.8}
+  
+  - name: get_clipboard
+    description: "读取剪贴板内容"
+    params: {}
+  
+  - name: set_clipboard
+    description: "设置剪贴板内容"
+    params:
+      text: {type: "string", required: true}
+  
+  - name: wait
+    description: "等待指定秒数"
+    params:
+      seconds: {type: "number", required: true}
+
+# 预设任务模板
+presets:
+  publish_xianyu:
+    name: "闲鱼发布商品"
+    description: "在闲鱼App发布二手商品"
+    required_params: ["title", "price"]
+    optional_params: ["description", "images"]
+  
+  publish_wechat_article:
+    name: "微信公众号发布"
+    description: "在公众号后台发布文章"
+    required_params: ["title", "content"]
+    optional_params: ["cover_image"]
+  
+  fill_online_form:
+    name: "在线表单填写"
+    description: "批量填写网页表单"
+    required_params: ["fields"]
+    optional_params: ["submit"]
