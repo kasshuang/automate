@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AutoMate - 用自然语言控制电脑，AI驱动的PC自动化工具</title>
+  <meta name="description" content="AutoMate 是一款 AI 驱动的 Windows 自动化工具。通过自然语言描述任务，AI 自动规划操作路径并执行。支持电商上架、内容发布、办公自动化等场景。比 RPA 更智能，比纯 AI Agent 更落地。">
+  <meta name="keywords" content="PC自动化, RPA替代, AI自动化, 闲鱼自动上架, 办公自动化, Windows自动化, Python自动化">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0F172A;
+      --bg-card: #1E293B;
+      --bg-code: #0F172A;
+      --primary: #6366F1;
+      --primary-glow: rgba(99, 102, 241, 0.3);
+      --accent: #22D3EE;
+      --accent-glow: rgba(34, 211, 238, 0.2);
+      --text: #F8FAFC;
+      --text-muted: #94A3B8;
+      --border: #334155;
+      --gradient-primary: linear-gradient(135deg, #6366F1, #8B5CF6);
+      --gradient-accent: linear-gradient(135deg, #22D3EE, #06B6D4);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    /* ---- Navbar ---- */
+    .navbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 40px;
+      height: 64px;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.2rem;
+      font-weight: 700;
+    }
+
+    .nav-logo-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--gradient-primary);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--text); }
+
+    .nav-github {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .nav-github:hover {
+      border-color: var(--primary);
+      background: var(--primary-glow);
+    }
+
+    .nav-toggle {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    /* ---- Hero ---- */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: 100px 40px 60px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -20%;
+      width: 800px;
+      height: 800px;
+      background: radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: -30%;
+      right: -10%;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(34,211,238,0.1) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+      width: 100%;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      background: var(--primary-glow);
+      border: 1px solid rgba(99,102,241,0.4);
+      border-radius: 20px;
+      font-size: 0.8rem;
+      color: var(--accent);
+      margin-bottom: 20px;
+    }
+
+    .hero-tag .dot {
+      width: 6px;
+      height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .hero h1 {
+      font-size: clamp(2.2rem, 4vw, 3.5rem);
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 20px;
+      background: linear-gradient(135deg, var(--text) 0%, var(--text-muted) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero h1 span {
+      background: var(--gradient-primary);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      margin-bottom: 32px;
+      max-width: 520px;
+    }
+
+    .hero-btns {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 28px;
+      background: var(--gradient-primary);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 20px var(--primary-glow);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px var(--primary-glow);
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 28px;
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .code-demo {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .code-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 16px;
+      background: rgba(0,0,0,0.3);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .code-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    .code-dot.red { background: #FF5F56; }
+    .code-dot.yellow { background: #FFBD2E; }
+    .code-dot.green { background: #27C93F; }
+
+    .code-body {
+      padding: 20px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      line-height: 1.8;
+    }
+
+    .code-comment { color: #64748B; }
+    .code-cmd { color: var(--accent); }
+    .code-text { color: #A78BFA; }
+    .code-done { color: #4ADE80; }
+
+    .code-output {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px dashed var(--border);
+      color: var(--text-muted);
+      font-size: 0.8rem;
+    }
+
+    /* ---- Section common ---- */
+    .section {
+      padding: 100px 40px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .section-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      background: var(--accent-glow);
+      border: 1px solid rgba(34,211,238,0.3);
+      border-radius: 20px;
+      font-size: 0.75rem;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+    }
+
+    .section h2 {
+      font-size: clamp(1.8rem, 3vw, 2.5rem);
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .section-sub {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      max-width: 600px;
+      margin-bottom: 60px;
+    }
+
+    /* ---- Pain points ---- */
+    .pain-section {
+      background: linear-gradient(180deg, var(--bg) 0%, rgba(30,41,59,0.3) 50%, var(--bg) 100%);
+    }
+
+    .pain-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-bottom: 60px;
+    }
+
+    .pain-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px 24px;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .pain-card:hover {
+      border-color: rgba(99,102,241,0.5);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(99,102,241,0.1);
+    }
+
+    .pain-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--gradient-primary);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .pain-card:hover::before { opacity: 1; }
+
+    .pain-icon {
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+    }
+
+    .pain-card h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .pain-card p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .pain-tagline {
+      text-align: center;
+      padding: 32px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(34,211,238,0.1));
+      border: 1px solid rgba(99,102,241,0.3);
+      border-radius: 16px;
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+
+    .pain-tagline span { color: var(--accent); }
+
+    /* ---- Features ---- */
+    .feature-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px 24px;
+      transition: all 0.3s;
+      position: relative;
+    }
+
+    .feature-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 40px var(--accent-glow);
+      transform: translateY(-4px);
+    }
+
+    .feature-icon {
+      width: 56px;
+      height: 56px;
+      background: var(--gradient-primary);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      margin-bottom: 20px;
+    }
+
+    .feature-card h3 {
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .feature-card p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+    }
+
+    .feature-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: rgba(99,102,241,0.15);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      color: var(--primary);
+    }
+
+    /* ---- Scenarios ---- */
+    .scenario-section {
+      background: linear-gradient(180deg, var(--bg) 0%, rgba(30,41,59,0.2) 50%, var(--bg) 100%);
+    }
+
+    .scenario-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .scenario-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px 24px;
+      transition: all 0.3s;
+      cursor: default;
+    }
+
+    .scenario-card:hover {
+      border-color: rgba(34,211,238,0.4);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+    }
+
+    .scenario-emoji {
+      font-size: 2.5rem;
+      margin-bottom: 16px;
+    }
+
+    .scenario-card h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .scenario-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .scenario-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      color: var(--text-muted);
+      font-size: 0.88rem;
+    }
+
+    .scenario-list li::before {
+      content: '✓';
+      color: var(--accent);
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* ---- Quick start ---- */
+    .quick-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      align-items: start;
+    }
+
+    .quick-install {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+    }
+
+    .quick-install h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .install-cmd {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 20px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.95rem;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .install-cmd:hover {
+      border-color: var(--accent);
+      background: rgba(34,211,238,0.05);
+    }
+
+    .install-cmd .prompt { color: var(--accent); }
+    .install-cmd .cmd { color: var(--text); }
+
+    .copy-hint {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-align: right;
+      margin-bottom: 8px;
+    }
+
+    .quick-example h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .example-block {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .example-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .example-tab {
+      padding: 10px 20px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+      background: none;
+      border-top: none;
+      border-left: none;
+      border-right: none;
+      font-family: inherit;
+    }
+
+    .example-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    .example-tab:hover { color: var(--text); }
+
+    .example-code {
+      padding: 24px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.9;
+    }
+
+    .example-code .kw { color: #C084FC; }
+    .example-code .str { color: #86EFAC; }
+    .example-code .fn { color: var(--accent); }
+    .example-code .cm { color: #64748B; }
+    .example-code .ok { color: #4ADE80; }
+
+    .enjoy-msg {
+      margin-top: 24px;
+      padding: 16px 20px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(34,211,238,0.1));
+      border-radius: 10px;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    /* ---- Plugin ---- */
+    .plugin-section {
+      background: linear-gradient(180deg, var(--bg) 0%, rgba(30,41,59,0.2) 50%, var(--bg) 100%);
+    }
+
+    .plugin-box {
+      background: var(--bg-card);
+      border: 1px solid rgba(99,102,241,0.3);
+      border-radius: 16px;
+      padding: 32px;
+    }
+
+    .plugin-cmd {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      padding: 12px 16px;
+      background: var(--bg);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      color: var(--text-muted);
+    }
+
+    .plugin-cmd .kw { color: #C084FC; }
+
+    .plugin-note {
+      margin-top: 16px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .plugin-note span { color: var(--accent); }
+
+    /* ---- Footer ---- */
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 40px;
+    }
+
+    .footer-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .footer-left {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .footer-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 24px;
+      list-style: none;
+    }
+
+    .footer-links a {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover { color: var(--text); }
+
+    .footer-right {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* ---- Particles ---- */
+    #particles {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ---- Mobile ---- */
+    @media (max-width: 900px) {
+      .hero-inner { grid-template-columns: 1fr; gap: 40px; }
+      .hero { padding: 80px 20px 60px; }
+      .pain-cards, .feature-cards, .scenario-grid { grid-template-columns: 1fr; }
+      .quick-grid { grid-template-columns: 1fr; }
+      .section { padding: 60px 20px; }
+      .nav-links { display: none; }
+      .nav-toggle { display: block; }
+      .footer-inner { flex-direction: column; gap: 20px; text-align: center; }
+      .footer-left { flex-direction: column; }
+      .hero-btns { flex-direction: column; }
+    }
+
+    @media (max-width: 600px) {
+      .hero h1 { font-size: 2rem; }
+      .navbar { padding: 0 20px; }
+      .hero { padding: 80px 20px 60px; }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="particles"></canvas>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <div class="nav-logo">
+    <div class="nav-logo-icon">⚡</div>
+    <span>AutoMate</span>
+  </div>
+  <ul class="nav-links">
+    <li><a href="#features">功能</a></li>
+    <li><a href="#scenarios">场景</a></li>
+    <li><a href="#quickstart">快速上手</a></li>
+    <li><a href="#plugins">插件</a></li>
+    <li><a href="https://github.com/kasshuang/automate" target="_blank" class="nav-github">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+      GitHub
+    </a></li>
+  </ul>
+  <button class="nav-toggle" id="navToggle">☰</button>
+</nav>
+
+<!-- Hero -->
+<section class="hero" id="hero">
+  <div class="hero-inner">
+    <div class="hero-text">
+      <div class="hero-tag"><span class="dot"></span>AI驱动的PC自动化</div>
+      <h1>让 <span>AI</span> 替你<br>操作电脑</h1>
+      <p class="hero-desc">用自然语言控制 Windows 电脑，自动完成重复性工作。<br>比 RPA 更智能，比纯 AI Agent 更落地。</p>
+      <div class="hero-btns">
+        <a href="#quickstart" class="btn-primary">⚡ 立即安装</a>
+        <a href="https://github.com/kasshuang/automate" target="_blank" class="btn-secondary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          GitHub
+        </a>
+      </div>
+    </div>
+    <div class="code-demo">
+      <div class="code-header">
+        <span class="code-dot red"></span>
+        <span class="code-dot yellow"></span>
+        <span class="code-dot green"></span>
+      </div>
+      <div class="code-body">
+        <div><span class="code-comment"># 说一句话，AI 替你搞定</span></div>
+        <div style="margin-top:10px"><span class="code-cmd">automate</span> <span class="code-text">run</span> <span class="code-text">"帮我把闲鱼商品上架"</span></div>
+        <div style="margin-top:12px"><span class="code-comment"># 自动打开闲鱼 → 识别界面 →</span></div>
+        <div><span class="code-comment"># 填写表单 → 提交发布</span></div>
+        <div class="code-output">
+          <span class="code-done">✓</span> 任务完成！商品已上架
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Pain Points -->
+<section class="section pain-section" id="pain">
+  <div class="section-tag">💡 痛点</div>
+  <h2>每天浪费 2 小时做重复操作？</h2>
+  <p class="section-sub">你不是在工作，你是在重复。AutoMate 终结这一切。</p>
+
+  <div class="pain-cards">
+    <div class="pain-card">
+      <div class="pain-icon">😩</div>
+      <h3>RPA 配置太复杂</h3>
+      <p>拖拽几百个节点，就为抓一个数据。学了三天，最后还是放弃。</p>
+    </div>
+    <div class="pain-card">
+      <div class="pain-icon">🧠</div>
+      <h3>纯 AI 不会操作电脑</h3>
+      <p>ChatGPT 回答得头头是道，一问"怎么点"就哑火。道理懂，操作不会。</p>
+    </div>
+    <div class="pain-card">
+      <div class="pain-icon">🔄</div>
+      <h3>重复工作永无止境</h3>
+      <p>每天上架、下架、填表、截图、发文章……做完一天，人麻了。</p>
+    </div>
+  </div>
+
+  <div class="pain-tagline">
+    AutoMate = AI 的大脑 <span>+</span> 自动化的双手<br>
+    你说<em>"干什么"</em>，它知道<em>"怎么做"</em>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="section" id="features">
+  <div class="section-tag">⚡ 核心能力</div>
+  <h2>三步，告别重复劳动</h2>
+  <p class="section-sub">简单到不可思议的强大，复杂到不敢相信的自动。</p>
+
+  <div class="feature-cards">
+    <div class="feature-card">
+      <div class="feature-icon">💬</div>
+      <h3>自然语言，一句话干活</h3>
+      <p>不用学脚本，不用记命令。告诉 AI 你想做什么，它自动规划操作步骤并执行。</p>
+      <div class="feature-tag">🗣️ 自然语言</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">👁️</div>
+      <h3>AI 认识你的界面</h3>
+      <p>基于视觉模型识别按钮、输入框、下拉菜单。即使界面变了，AutoMate 也能找对位置。</p>
+      <div class="feature-tag">🔍 智能UI识别</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🎬</div>
+      <h3>录一次，永远不用再做</h3>
+      <p>手动操作一遍，AutoMate 学会。以后随时回放，再复杂的流程也能一键自动化。</p>
+      <div class="feature-tag">🎥 录制备忘</div>
+    </div>
+  </div>
+</section>
+
+<!-- Scenarios -->
+<section class="section scenario-section" id="scenarios">
+  <div class="section-tag">🎯 使用场景</div>
+  <h2>你的日常，AutoMate 全包</h2>
+  <p class="section-sub">覆盖最费时的场景，把时间真正还给你。</p>
+
+  <div class="scenario-grid">
+    <div class="scenario-card">
+      <div class="scenario-emoji">🛒</div>
+      <h3>电商运营</h3>
+      <ul class="scenario-list">
+        <li>闲鱼 / 淘宝商品一键上架</li>
+        <li>自动填写标题、价格、描述</li>
+        <li>批量处理商品上下架</li>
+      </ul>
+    </div>
+    <div class="scenario-card">
+      <div class="scenario-emoji">✍️</div>
+      <h3>内容创作</h3>
+      <ul class="scenario-list">
+        <li>文章一键发布到公众号</li>
+        <li>自动截图生成封面</li>
+        <li>批量配图加水印</li>
+      </ul>
+    </div>
+    <div class="scenario-card">
+      <div class="scenario-emoji">📊</div>
+      <h3>办公自动化</h3>
+      <ul class="scenario-list">
+        <li>Excel 数据自动填充</li>
+        <li>报表自动生成</li>
+        <li>批量文件整理</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- Quick Start -->
+<section class="section" id="quickstart">
+  <div class="section-tag">🚀 快速上手</div>
+  <h2>3 行代码，开始自动化</h2>
+  <p class="section-sub">安装简单，上手零门槛，立即见效。</p>
+
+  <div class="quick-grid">
+    <div class="quick-install">
+      <h3>📦 Step 1 — 安装</h3>
+      <p class="copy-hint">点击复制命令</p>
+      <div class="install-cmd" onclick="copyCmd(this)" data-cmd="pip install automatelib">
+        <span class="prompt">$</span>
+        <span class="cmd">pip install automatelib</span>
+      </div>
+
+      <h3 style="margin-top:24px">🖥️ Step 2 — 运行</h3>
+      <div class="install-cmd" onclick="copyCmd(this)" data-cmd="automate run &quot;上架闲鱼商品&quot;">
+        <span class="prompt">$</span>
+        <span class="cmd">automate run "上架闲鱼商品"</span>
+      </div>
+      <div class="install-cmd" onclick="copyCmd(this)" data-cmd="automate gui">
+        <span class="prompt">$</span>
+        <span class="cmd">automate gui</span>
+      </div>
+    </div>
+
+    <div class="quick-example">
+      <h3>🐍 Step 3 — Python API</h3>
+      <div class="example-block">
+        <div class="example-tabs">
+          <button class="example-tab active" onclick="switchTab(this, 'code1')">命令行</button>
+          <button class="example-tab" onclick="switchTab(this, 'code2')">GUI 模式</button>
+          <button class="example-tab" onclick="switchTab(this, 'code3')">Python API</button>
+        </div>
+        <div class="example-code" id="code1">
+          <div><span class="cm"># 命令行，一句话搞定</span></div>
+          <div><span class="fn">automate</span> <span class="kw">run</span> <span class="str">"上架闲鱼商品"</span></div>
+          <div style="margin-top:12px"><span class="cm"># 或进入 GUI 界面</span></div>
+          <div><span class="fn">automate</span> gui</div>
+        </div>
+        <div class="example-code" id="code2" style="display:none">
+          <div><span class="cm"># 打开 GUI 图形界面</span></div>
+          <div><span class="fn">automate</span> gui</div>
+          <div style="margin-top:12px"><span class="cm"># 支持可视化任务编辑</span></div>
+          <div><span class="cm"># 实时查看运行日志</span></div>
+        </div>
+        <div class="example-code" id="code3" style="display:none">
+          <div><span class="kw">from</span> automatelib <span class="kw">import</span> AutoMate</div>
+          <div style="margin-top:8px">am = <span class="fn">AutoMate</span>()</div>
+          <div>am.<span class="fn">execute</span>(<span class="str">"帮我上架二手iPhone 13"</span>)</div>
+          <div style="margin-top:12px"><span class="cm"># ☕ 喝杯咖啡，AutoMate 在干活</span></div>
+        </div>
+      </div>
+
+      <div class="enjoy-msg">
+        ☕ 喝杯咖啡，AutoMate 在干活
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Plugins -->
+<section class="section plugin-section" id="plugins">
+  <div class="section-tag">🔌 插件生态</div>
+  <h2>一键安装垂直场景插件</h2>
+  <p class="section-sub">社区驱动，按需扩展，专为你的场景而生。</p>
+
+  <div class="plugin-box">
+    <div class="plugin-cmd"><span class="prompt">$</span> automate install <span class="kw">ecommerce</span>  <span class="cm"># 电商全套</span></div>
+    <div class="plugin-cmd"><span class="prompt">$</span> automate install <span class="kw">content</span>     <span class="cm"># 内容运营</span></div>
+    <div class="plugin-cmd"><span class="prompt">$</span> automate install <span class="kw">office</span>      <span class="cm"># 办公自动化</span></div>
+    <p class="plugin-note">✨ <span>即将上线</span>：插件市场（Powered by 社区）</p>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-left">
+      <div class="footer-logo">
+        <div class="nav-logo-icon" style="width:28px;height:28px;font-size:14px">⚡</div>
+        AutoMate
+      </div>
+      <ul class="footer-links">
+        <li><a href="https://github.com/kasshuang/automate" target="_blank">GitHub</a></li>
+        <li><a href="https://pypi.org/project/automatelib" target="_blank">PyPI</a></li>
+        <li><a href="https://github.com/kasshuang/automate/blob/main/LICENSE" target="_blank">MIT License</a></li>
+      </ul>
+    </div>
+    <div class="footer-right">
+      Made with ❤️ for Windows users
+    </div>
+  </div>
+</footer>
+
+<script>
+  // ---- Particle animation ----
+  (function(){
+    const canvas = document.getElementById('particles');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    const NUM = 60;
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    function init() {
+      resize();
+      particles = [];
+      for (let i = 0; i < NUM; i++) {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          r: Math.random() * 1.5 + 0.5,
+          vx: (Math.random() - 0.5) * 0.3,
+          vy: (Math.random() - 0.5) * 0.3,
+          a: Math.random() * 0.4 + 0.1
+        });
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0) p.x = canvas.width;
+        if (p.x > canvas.width) p.x = 0;
+        if (p.y < 0) p.y = canvas.height;
+        if (p.y > canvas.height) p.y = 0;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(99, 102, 241, ${p.a})`;
+        ctx.fill();
+      });
+      requestAnimationFrame(draw);
+    }
+
+    window.addEventListener('resize', init);
+    init();
+    draw();
+  })();
+
+  // ---- Smooth scroll ----
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const target = document.querySelector(a.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // close mobile menu
+      document.querySelectorAll('.nav-links').forEach(el => el.style.display = '');
+    });
+  });
+
+  // ---- Mobile nav toggle ----
+  document.getElementById('navToggle').addEventListener('click', function() {
+    const navLinks = document.querySelector('.nav-links');
+    navLinks.style.display = navLinks.style.display === 'flex' ? '' : 'flex';
+    navLinks.style.flexDirection = 'column';
+    navLinks.style.position = 'fixed';
+    navLinks.style.top = '64px';
+    navLinks.style.left = '0';
+    navLinks.style.right = '0';
+    navLinks.style.background = 'rgba(15,23,42,0.97)';
+    navLinks.style.backdropFilter = 'blur(12px)';
+    navLinks.style.padding = '20px 40px';
+    navLinks.style.gap = '20px';
+    navLinks.style.borderBottom = '1px solid #334155';
+  });
+
+  // ---- Tab switcher ----
+  function switchTab(btn, targetId) {
+    document.querySelectorAll('.example-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.example-code').forEach(c => c.style.display = 'none');
+    document.getElementById(targetId).style.display = '';
+  }
+
+  // ---- Copy command ----
+  function copyCmd(el) {
+    const cmd = el.getAttribute('data-cmd');
+    navigator.clipboard.writeText(cmd).then(() => {
+      const orig = el.querySelector('.cmd').textContent;
+      el.querySelector('.cmd').textContent = '✓ 已复制!';
+      setTimeout(() => { el.querySelector('.cmd').textContent = orig; }, 1200);
+    });
+  }
+</script>
+
+</body>
+</html>

@@ -1,33 +1,66 @@
 # AutoMate 配置文件
-# Phase 3: Agent 配置
+# Phase 3+: 分层混合Agent配置
 
-# LLM API 配置
+# ============================================
+# LLM API 配置 - 分层模型支持
+# ============================================
 llm:
-  # 提供者: openai | ollama | azure
-  provider: openai
+  # ---- 规划模型（高级）----
+  # 用于：任务分析、拆解、编排、策略规划
+  # 推荐：DeepSeek-V3（¥1/M，极便宜）| GPT-4o-mini | Qwen-Plus
+  planner_provider: deepseek
+  planner_model: deepseek-chat  # 或 deepseek-reasoner（推理模型）
   
-  # OpenAI 配置
+  # ---- 执行模型（简单）----
+  # 用于：执行具体操作步骤、判断下一步
+  # 推荐：DeepSeek-V3（通用）| DeepSeek-Coder（编程）| Qwen2.5
+  executor_provider: deepseek
+  executor_model: deepseek-chat
+  
+  # ---- 视觉模型（屏幕理解）----
+  # 用于：识别屏幕元素、理解UI布局
+  # 仅在需要视觉理解时调用
+  vision_provider: openai
+  vision_model: gpt-4o-mini
+  
+  # ---- DeepSeek 配置（推荐 - 最便宜）----
+  deepseek:
+    api_key: "${DEEPSEEK_API_KEY}"      # 注册 https://platform.deepseek.com
+    # DeepSeek-V3: ¥1/百万tokens = $0.14/百万
+    # DeepSeek-R1: ¥16/百万tokens = $2.2/百万（推理强）
+    # 新用户注册送 $1 额度
+    timeout: 120
+  
+  # ---- OpenAI 配置 ----
   openai:
-    api_key: "${OPENAI_API_KEY}"        # 环境变量引用
+    api_key: "${OPENAI_API_KEY}"
     base_url: "https://api.openai.com/v1"
-    model: "gpt-4o-mini"                # 主力模型
-    model_vision: "gpt-4o"               # 视觉模型（需要屏幕理解时）
-    max_tokens: 4096
-    temperature: 0.7
-    timeout: 120                         # 秒
+    model: "gpt-4o-mini"
+    model_vision: "gpt-4o"
+    timeout: 120
   
-  # Ollama 本地模型配置
+  # ---- Ollama 本地模型配置（完全免费！）----
+  # 下载: https://ollama.com
+  # 推荐模型: qwen2.5:3b / llama3.2:3b / deepseek-coder-v2:16b
   ollama:
     base_url: "http://localhost:11434"
-    model: "llama3.2"                    # 默认模型
-    model_vision: "llama3.2-vision"      # 视觉模型
-    timeout: 300                         # 本地模型较慢
+    model: "qwen2.5:3b"                 # 中文好，3B参数
+    model_vision: "llama3.2-vision"
+    timeout: 300
   
-  # Azure OpenAI 配置
-  azure:
-    api_version: "2024-02-01"
-    base_url: "https://YOUR_RESOURCE.openai.azure.com"
-    deployment_name: "gpt-4o-mini"
+  # ---- 硅基流动（国产，便宜）----
+  siliconflow:
+    api_key: "${SILICONFLOW_API_KEY}"
+    base_url: "https://api.siliconflow.cn/v1"
+    model: "deepseek-ai/DeepSeek-V3"
+    timeout: 120
+  
+  # ---- 阿里云百炼（通义千问）----
+  dashscope:
+    api_key: "${DASHSCOPE_API_KEY}"
+    base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    model: "qwen-plus"                 # qwen-plus: ¥0.04/千tokens
+    timeout: 120
 
 # Agent 行为配置
 agent:
