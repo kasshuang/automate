@@ -7,21 +7,18 @@
 llm:
   # ---- 规划模型（高级）----
   # 用于：任务分析、拆解、编排、策略规划
-  # 推荐：DeepSeek-V3（¥1/M，极便宜）| GPT-4o-mini | Qwen-Plus
-  planner_provider: deepseek
-  planner_model: deepseek-chat  # 或 deepseek-reasoner（推理模型）
+  planner_provider: dashscope
+  planner_model: qwen-plus
   
-  # ---- 执行模型（简单）----
+  # ---- 执行模型（简单/便宜）----
   # 用于：执行具体操作步骤、判断下一步
-  # 推荐：DeepSeek-V3（通用）| DeepSeek-Coder（编程）| Qwen2.5
-  executor_provider: deepseek
-  executor_model: deepseek-chat
+  executor_provider: dashscope
+  executor_model: qwen-turbo
   
   # ---- 视觉模型（屏幕理解）----
   # 用于：识别屏幕元素、理解UI布局
-  # 仅在需要视觉理解时调用
-  vision_provider: openai
-  vision_model: gpt-4o-mini
+  vision_provider: dashscope
+  vision_model: qwen-vl-plus
   
   # ---- DeepSeek 配置（推荐 - 最便宜）----
   deepseek:
@@ -56,10 +53,18 @@ llm:
     timeout: 120
   
   # ---- 阿里云百炼（通义千问）----
+  # 注册：https://bailian.console.aliyun.com/
+  # 百炼新用户送100万tokens免费额度！
+  # qwen-turbo: 免费（限时），极快
+  # qwen-plus: ¥0.004/千tokens（输入），¥0.012/千tokens（输出）
+  # qwen-max: ¥0.04/千tokens（输入），¥0.12/千tokens（输出）
+  # qwen-vl-plus: 视觉模型 ¥0.008/千tokens
   dashscope:
-    api_key: "${DASHSCOPE_API_KEY}"
+    api_key: "sk-63bec4b2e9154415b3a68005309d6226"
     base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
-    model: "qwen-plus"                 # qwen-plus: ¥0.04/千tokens
+    planner_model: "qwen-plus"
+    executor_model: "qwen-turbo"
+    vision_model: "qwen-vl-plus"
     timeout: 120
 
 # Agent 行为配置

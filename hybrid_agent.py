@@ -442,8 +442,15 @@ class LayeredLLMClient:
         cfg = self.llm_config.get(provider, {})
         api_key = cfg.get("api_key", os.environ.get("OPENAI_API_KEY", ""))
         
+        # dashscope 用自己的环境变量
+        if provider == "dashscope" and (not api_key or api_key.startswith("${")):
+            api_key = os.environ.get("DASHSCOPE_API_KEY", "")
+        
         if provider == "deepseek":
             base_url = "https://api.deepseek.com/v1"
+            model = cfg.get(model_key, default_model)
+        elif provider == "dashscope":
+            base_url = cfg.get("base_url", "https://dashscope.aliyuncs.com/compatible-mode/v1")
             model = cfg.get(model_key, default_model)
         elif provider == "openai":
             base_url = cfg.get("base_url", "https://api.openai.com/v1")
@@ -847,12 +854,11 @@ class HybridAgent:
             logger.error(f"规划失败: {e}")
             return TaskPlan(task=task, complexity=complexity, intent=f"错误: {e}")
     
-    def _execute_step(self, step: ExecutionStep, iteration: int) -> Dict:
-        """执行单个步骤"""
+    def _execute_step_legacy(self, step: ExecutionStep, iteration: int) -> Dict:
+        """兜底的执行方法（当 unified 不可用时）"""
         action = step.action
         params = step.params.copy()
         
-        # 移除None的坐标，让系统自动识别
         if "x" in params and params["x"] is None:
             params.pop("x", None)
             params.pop("y", None)
@@ -871,21 +877,30 @@ class HybridAgent:
             elif action == "hotkey":
                 result = self.pc.keyboard.hotkey(*params.get("keys", ["ctrl", "c"]))
             elif action == "wait":
-                seconds = params.get("seconds", 1)
-                time.sleep(seconds)
-                result = {"action": "wait", "waited": seconds}
+                time.sleep(params.get("seconds", 1))
+                result = {"action": "wait", "waited": params.get("seconds", 1)}
             elif action == "screenshot":
-                region = params.get("region")
                 result = self.pc.screenshot(f"step_{iteration}.png")
-            elif action == "find_and_click":
-                # 视觉引导点击
-                desc = params.get("image_desc", "")
-                result = {"action": "find_and_click", "target": desc, "status": "needs_vision"}
             else:
                 result = {"action": "unknown", "error": f"未知操作: {action}"}
             
             if self.verbose:
                 print(f"  → {action}: {result}")
+            return result
+        except Exception as e:
+            return {"action": action, "error": str(e)}
+
+    def _execute_step(self, step: ExecutionStep, iteration: int) -> Dict:
+        """执行单个步骤 - 自动路由到统一执行引擎"""
+        # 延迟导入，避免启动时引入未安装的依赖
+        try:
+            from executors.unified import execute_step
+        except ImportError:
+            # 兜底：使用旧的 pc controller 方式
+            return self._execute_step_legacy(step, iteration)
+        
+        try:
+            result = execute_step(step, verbose=self.verbose)
             
             if self.on_step:
                 self.on_step(step, result)
@@ -893,9 +908,9 @@ class HybridAgent:
             return result
             
         except Exception as e:
-            error_result = {"action": action, "error": str(e)}
+            error_result = {"action": step.action, "error": str(e)}
             if self.verbose:
-                print(f"  ✗ {action}: {e}")
+                print(f"  ✗ {step.action}: {e}")
             return error_result
     
     def run(self, task: str, max_iterations: int = None) -> HybridResult:
@@ -950,41 +965,49 @@ class HybridAgent:
                 time.sleep(0.5)
             
         elif complexity == TaskComplexity.SIMPLE:
-            # 路径B: 小模型直接执行
-            log = "执行路径: 执行模型直接执行 (低成本)"
+            # 路径B: 小模型直接执行 → 规则解析 + 执行全部步骤
+            log = "执行路径: 规则引擎 + 执行模型 (低成本)"
             if self.verbose:
                 print(f"[HybridAgent] {log}")
             result.execution_log.append(log)
-            result.cost_used = "executor_model"
+            result.cost_used = "规则引擎 + executor_model"
             
-            # 先截图获取当前状态
-            screenshot_path = self.pc.screenshot()
-            
-            # 调用执行模型
-            messages = [
-                {"role": "system", "content": self.EXECUTOR_PROMPT},
-                {"role": "user", "content": f"任务: {task}\n\n请根据截图决定下一步操作。"}
-            ]
-            
-            try:
-                response = self.llm.chat(messages, client_type="executor", max_tokens=512)
-                if response.choices:
-                    raw = response.choices[0].message.content
-                    action_data = json.loads(re.search(r'\{.*\}', raw, re.DOTALL).group())
-                    
-                    step = ExecutionStep(
-                        order=1,
-                        action=action_data.get("action", "click"),
-                        params=action_data.get("params", {}),
-                        description=action_data.get("reasoning", ""),
-                        model_used="executor_model"
-                    )
-                    step_result = self._execute_step(step, 1)
+            # 先规则解析
+            steps = RuleEngine.parse(task)
+            if steps:
+                result.steps_planned = len(steps)
+                for step in steps[:max_iterations]:
+                    step_result = self._execute_step(step, step.order)
                     result.results.append(step_result)
-                    result.steps_executed = 1
-            except Exception as e:
-                result.status = "error"
-                result.error = str(e)
+                    result.steps_executed += 1
+                    time.sleep(0.5)
+            else:
+                # 规则无法处理，尝试LLM单步执行
+                try:
+                    screenshot_path = self.pc.screenshot()
+                    messages = [
+                        {"role": "system", "content": self.EXECUTOR_PROMPT},
+                        {"role": "user", "content": f"任务: {task}\n\n请根据截图决定下一步操作。"}
+                    ]
+                    response = self.llm.chat(messages, client_type="executor", max_tokens=512)
+                    if response.choices:
+                        raw = response.choices[0].message.content
+                        match = re.search(r'\{.*\}', raw, re.DOTALL)
+                        if match:
+                            action_data = json.loads(match.group())
+                            step = ExecutionStep(
+                                order=1,
+                                action=action_data.get("action", "click"),
+                                params=action_data.get("params", {}),
+                                description=action_data.get("reasoning", ""),
+                                model_used="executor_model"
+                            )
+                            step_result = self._execute_step(step, 1)
+                            result.results.append(step_result)
+                            result.steps_executed = 1
+                except Exception as e:
+                    result.status = "error"
+                    result.error = str(e)
         
         else:
             # 路径C/D: 高级模型规划 → 小模型执行
@@ -1025,6 +1048,13 @@ class HybridAgent:
                         result.status = "partial"
                 
                 time.sleep(0.5)
+        
+        # 关闭执行器资源
+        try:
+            from executors.unified import close_all
+            close_all()
+        except Exception:
+            pass
         
         # 结果判定
         if result.steps_executed == result.steps_planned and result.steps_planned > 0:
